@@ -1,89 +1,91 @@
-# 环境安装
-# pip install rembg opencv-python numpy flask
+# 环境依赖：pip install rembg opencv-python numpy flask
 import os
 from rembg import remove
 from PIL import Image
 import numpy as np
-from flask import Flask, request, Response
+from flask import Flask, request, Response, send_file
 import io
 
 # 设置模型路径
 os.environ['U2NET_HOME'] = '/app/models'
 
 app = Flask(__name__)
+app.config['MAX_CONTENT_LENGTH'] = 100 * 1024 * 1024  # 允许最大100MB文件上传
 
 
-def remove_background_and_crop(image_stream):
+def process_image_stream(image_stream):
     """
-    抠取图片中的人物并裁剪出只包含人物的区域
-
-    参数：
-    image_stream: 图片的二进制流
-
-    返回：
-    cropped_img: 裁剪后的图片（PIL.Image对象）
+    处理原始图片流的通用方法
     """
     try:
         # 从二进制流读取图片
         original_img = Image.open(io.BytesIO(image_stream))
 
-        # 使用U2-Net模型进行背景去除
+        # 转换格式处理
+        if original_img.mode not in ['RGB', 'RGBA']:
+            original_img = original_img.convert('RGB')
+
+        # 执行抠图处理
         result_img = remove(
             original_img,
-            post_process_mask=True,  # 启用后处理，减少糊边
-            alpha_matting=True,      # 启用透明边缘处理
-            alpha_matting_foreground_threshold=50,  # 降低前景阈值，保留复杂区域
-            alpha_matting_background_threshold=0,   # 降低背景阈值，减少背景残留
-            alpha_matting_erode_size=5              # 减小边缘腐蚀大小
+            post_process_mask=True,
+            alpha_matting=True,
+            alpha_matting_foreground_threshold=50,
+            alpha_matting_background_threshold=0,
+            alpha_matting_erode_size=5
         )
 
-        # 将抠图结果转换为NumPy数组
+        # 转换为NumPy数组进行裁剪处理
         result_np = np.array(result_img)
+        alpha_channel = result_np[:, :, 3]
+        coords = np.argwhere(alpha_channel > 0)
+        if coords.size == 0:
+            raise ValueError("未检测到有效人物区域")
 
-        # 找到人物的边界框
-        alpha_channel = result_np[:, :, 3]  # 获取透明度通道
-        coords = np.argwhere(alpha_channel > 0)  # 找到不透明区域的坐标
-        y_min, x_min = coords.min(axis=0)  # 左上角坐标
-        y_max, x_max = coords.max(axis=0)  # 右下角坐标
-
-        # 裁剪出只包含人物的区域
+        y_min, x_min = coords.min(axis=0)
+        y_max, x_max = coords.max(axis=0)
         cropped_img = result_img.crop((x_min, y_min, x_max, y_max))
 
         return cropped_img
 
     except Exception as e:
-        raise ValueError(f"抠图失败，错误信息：{str(e)}")
+        raise RuntimeError(f"图片处理失败: {str(e)}")
 
 
-@app.route('/imageSegment', methods=['POST'])
-def remove_bg_api():
+@app.route('/segment', methods=['POST'])
+def image_segment():
     """
-    REST API 接口：接收图片流，返回抠图后的图片流
+    流式处理接口
+    接收：原始图片二进制流（Content-Type: application/octet-stream）
+    返回：PNG格式抠图结果
     """
     try:
-        # 从请求中获取图片流
-        if 'file' not in request.files:
-            return Response("未上传文件", status=400)
+        # 验证输入数据
+        if not request.data:
+            return Response("请求体为空", status=400, mimetype='text/plain')
 
-        file = request.files['file']
-        if file.filename == '':
-            return Response("文件名为空", status=400)
+        # 处理图片流
+        cropped_img = process_image_stream(request.data)
 
-        # 调用抠图函数
-        cropped_img = remove_background_and_crop(file.read())
-
-        # 将裁剪后的图片转换为二进制流
+        # 准备输出流
         output_stream = io.BytesIO()
-        cropped_img.save(output_stream, format="PNG", quality=100)
+        cropped_img.save(output_stream, format="PNG", optimize=True)
         output_stream.seek(0)
 
-        # 返回图片流
-        return Response(output_stream.getvalue(), mimetype='image/png')
+        # 流式响应
+        return send_file(
+            output_stream,
+            mimetype='image/png',
+            as_attachment=True,
+            download_name='result.png'
+        )
 
+    except RuntimeError as e:
+        return Response(str(e), status=400, mimetype='text/plain')
     except Exception as e:
-        return Response(f"处理失败：{str(e)}", status=500)
+        app.logger.error(f"服务器错误: {str(e)}")
+        return Response("内部服务器错误", status=500, mimetype='text/plain')
 
 
 if __name__ == "__main__":
-    # 启动Flask服务
     app.run(host="0.0.0.0", port=5000)
