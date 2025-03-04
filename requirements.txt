@@ -1,0 +1,5 @@
+rembg
+opencv-python
+numpy
+flask
+onnxruntime
