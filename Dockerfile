@@ -1,13 +1,14 @@
-# 使用官方Python镜像并配置阿里云源
+# 使用官方 Python 3.10 精简镜像
 FROM python:3.10-slim
 
 LABEL authors="zcl"
 
-# 配置Debian阿里云镜像源（适配slim镜像）
-RUN echo "deb http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware" > /etc/apt/sources.list \
- && echo "deb-src http://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
- && echo "deb http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list \
- && echo "deb-src http://mirrors.aliyun.com/debian-security/ bookworm-security main contrib non-free non-free-firmware" >> /etc/apt/sources.list
+# 配置阿里云APT镜像源（适配slim镜像）
+RUN echo "Types: deb" > /etc/apt/sources.list.d/debian.sources \
+ && echo "URIs: http://mirrors.aliyun.com/debian" >> /etc/apt/sources.list.d/debian.sources \
+ && echo "Suites: bookworm bookworm-updates bookworm-backports" >> /etc/apt/sources.list.d/debian.sources \
+ && echo "Components: main contrib non-free non-free-firmware" >> /etc/apt/sources.list.d/debian.sources \
+ && echo "Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg" >> /etc/apt/sources.list.d/debian.sources
 
 # 安装系统依赖
 RUN apt-get update -y \
