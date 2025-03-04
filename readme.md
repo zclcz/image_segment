@@ -24,7 +24,7 @@
 ### 启动服务
 ```bash
 git clone https://github.com/zclcz/image_segment.git
-
+cd image_segment/
 # 构建镜像
 docker build -t image-segment .
 
