@@ -69,14 +69,12 @@ import java.io.InputStream;
 import java.nio.file.Paths;
 
 public class ImageSegmentTest {
-   private static String imagePath = "C:\\Users\\aaa\\Desktop\\package\\before.png";
-    private static String outImagePath = "C:\\Users\\aaa\\Desktop\\package\\result.png";
     // 服务地址(根据实际情况修改)
     private static final String API_URL = "http://localhost:5000/segment";
     // 输入图片路径(测试前需替换实际路径)
-    private static final String INPUT_PATH = imagePath;
+    private static final String INPUT_PATH = "before.png";
     // 输出图片保存路径
-    private static final String OUTPUT_PATH = outImagePath;
+    private static final String OUTPUT_PATH = "result.png";
 
     public static void main(String[] args) {
         try {
