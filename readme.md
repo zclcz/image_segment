@@ -29,7 +29,7 @@ cd image_segment/
 docker build -t image-segment .
 
 # 运行容器（推荐分配2GB共享内存）
-docker run -p 5000:5000 --shm-size=2g image-segment
+docker run -d 5000:5000 --shm-size=2g image-segment
 ```
 📡 API接口规范
 基础端点
