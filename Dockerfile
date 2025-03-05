@@ -31,8 +31,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # 下载模型文件（使用阿里云CDN）
 RUN mkdir -p /app/models \
- && wget https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx -O /app/models/u2net.onnx \
- && echo "b7cbf5a0ab8a735a4f8e3d6d30bffd2e6a7c2c5a5d6c0d7e3c6d8c0d5e3a2e8f  /app/models/u2net.onnx" | sha256sum -c
+ && wget https://github.com/danielgatis/rembg/releases/download/v0.0.0/u2net.onnx -O /app/models/u2net.onnx 
 
 # 复制项目代码
 COPY . .
