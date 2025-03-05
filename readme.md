@@ -31,23 +31,16 @@ docker build -t image-segment .
 # 运行容器（推荐分配2GB共享内存）
 docker run -d --shm-size=2g -p 5000:5000 image-segment
 ```
-##📡 API接口规范
-###基础端点
-Http
-POST /segment
-Content-Type: image/[jpg|png|webp]
-###响应格式
-Http
-200 OK
-Content-Type: image/png
 
-[PNG二进制流]
-##⚙️ 性能指标
-指标	数值
-最大输入分辨率	4096x4096像素
-平均处理耗时（1080P）	2.5s
-峰值内存占用	1.5GB
-并发处理能力	12 QPS（4核CPU）
+## ⚙️ 性能指标
+
+| 指标               | 数值         |
+|--------------------|--------------|
+| 最大输入分辨率     | 4096x4096像素|
+| 平均处理耗时（1080P）| 2.5s       |
+| 峰值内存占用       | 1.5GB        |
+| 并发处理能力       | 12 QPS（4核CPU）|
+
 ##📌 使用建议
 ###Docker生产部署
 ```Bash
@@ -76,8 +69,9 @@ response = requests.post("http://localhost:5000/segment",
     headers={"Content-Type": "image/jpeg"}
 )
 ```
-📞 技术支持
-请提供以下信息获取帮助：
-输入图片样本
-完整请求头信息
-服务日志片段
+## 📞 **技术支持**
+
+请提供以下信息以获取帮助：
+- 输入图片样本
+- 完整请求头信息
+- 服务日志片段
